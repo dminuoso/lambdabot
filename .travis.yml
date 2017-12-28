@@ -12,6 +12,7 @@ cache:
 before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/build-reports.log
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/00-index.tar
+  - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar
 
 matrix:
   include:
@@ -27,13 +28,18 @@ matrix:
       compiler: ": #GHC 8.0.2"
       addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.2,happy-1.19.5], sources: [hvr-ghc]}}
 
+    - env: CABALVER=2.0 GHCVER=8.2.2
+      compiler: ": #GHC 8.2.2"
+      addons: {apt: {packages: [cabal-install-2.0,ghc-8.2.2,happy-1.19.5], sources: [hvr-ghc]}}
+
 #  exclude:
 
-#  allow_failures:
-#    - env: CABALVER=1.24 GHCVER=8.0.2
+  allow_failures:
+    - env: CABALVER=1.18 GHCVER=7.8.4
 
 before_install:
   - unset CC
+  - if [ "$GHCVER" = "7.8.4" ]; then export CABAL_INSTALL_FLAGS='--constraint hoogle<5'; fi
   - export HAPPYVER=1.19.5
   - export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/happy/$HAPPYVER/bin:$PATH
   - export PACKAGES="lambdabot-core/ lambdabot-trusted/ lambdabot-*-plugins/ lambdabot/"
@@ -48,6 +54,10 @@ install:
   - if [ -f $HOME/.cabal/packages/hackage.haskell.org/00-index.tar.gz ]; then
       zcat $HOME/.cabal/packages/hackage.haskell.org/00-index.tar.gz >
            $HOME/.cabal/packages/hackage.haskell.org/00-index.tar;
+    fi
+  - if [ -f $HOME/.cabal/packages/hackage.haskell.org/01-index.tar.gz ]; then
+      zcat $HOME/.cabal/packages/hackage.haskell.org/01-index.tar.gz >
+           $HOME/.cabal/packages/hackage.haskell.org/01-index.tar;
     fi
   - for pkg in $(ghc-pkg list --user --simple-output); do echo $pkg; done | sort | tee packages-installed
   - cabal install $CABAL_INSTALL_FLAGS --only-dependencies --global --dry-run $PACKAGES | tee packages-needed
